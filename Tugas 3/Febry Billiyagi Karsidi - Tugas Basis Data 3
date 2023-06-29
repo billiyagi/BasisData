@@ -1,0 +1,73 @@
+> Tugas Basis Data
+> Febry Billiyagi Karsidi
+> 0110222223
+
+
+
+USE toko_online;
+
+
+#Membuat stok tabel bertambah dengan menambahkan stoknya melalui kolom jumlah yang ada di tabel suplai_produk
+
+DELIMITER //
+CREATE TRIGGER updateStok
+	AFTER INSERT
+    ON suplai_produk
+    FOR EACH ROW
+BEGIN
+-- Perintah Eksekusi
+	UPDATE produk SET stok = stok + NEW.jumlah
+    WHERE id = NEW.produk_id;
+END //
+DELIMITER //
+
+
+
+# Membuat kondisi tabel berubah ke kondisi sebelum ditambahkan data stoknya, dengan membuat otomatis menghapus dari jumlah yang ditambahkan pada tabel suplai_produk dengan idientifier nya adalah ID dari tabel produk
+
+DELIMITER //
+CREATE TRIGGER backToNormalStok
+	AFTER DELETE
+    ON suplai_produk
+    FOR EACH ROW
+BEGIN
+-- Perintah Eksekusi
+	UPDATE produk SET stok = stok - OLD.jumlah
+    WHERE id = OLD.produk_id;
+END //
+DELIMITER //
+
+
+SELECT suplai_produk.tgl AS tgl_suplai, produk.nama, 
+	jenis.nama AS jenis, 
+    suplai_produk.jumlah AS jumlah_suplai,
+    suplier.nama AS supplier FROM suplai_produk
+    INNER JOIN produk ON suplai_produk.produk_id = produk.id
+    INNER JOIN suplier ON suplai_produk.suplier_id = suplier.id
+    INNER JOIN jenis ON produk.jenis_id = jenis.id;
+    
+    
+# Membuat User Roni
+CREATE USER 'roni'@'localhost'
+IDENTIFIED BY 'root';
+GRANT ALL PRIVILEGES ON *.* TO 'roni'@'localhost' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
+# Membuat User Desi
+CREATE USER 'desi'@'localhost' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON toko_online.* TO 'desi'@'localhost' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
+# Membuat User Zaki
+CREATE USER 'zaki'@'localhost' IDENTIFIED BY 'password123';
+GRANT SELECT, INSERT ON toko_online.jenis TO 'zaki'@'localhost' WITH GRANT OPTION;
+GRANT SELECT, INSERT ON toko_online.produk TO 'zaki'@'localhost' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
+# Mencabut Hak Akses user Zaki dari menginput data pada tabel Jenis & Produk
+REVOKE INSERT ON toko_online.produk FROM 'zaki'@'localhost';
+REVOKE INSERT ON toko_online.jenis FROM 'zaki'@'localhost';
+
+# Mencabut Semua akses yang diberikan kepada user Desi
+REVOKE ALL PRIVILEGES ON *.* FROM 'desi'@'localhost';
+FLUSH PRIVILEGES;
